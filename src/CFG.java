@@ -72,7 +72,7 @@ public class CFG {
 		nodes = null;
 		for (Unit u : units) {
             Stmt statement = (Stmt) u;
-
+            System.out.println( statement.getJavaSourceStartLineNumber()+ " : "+ statement );
             if(u instanceof LookupSwitchStmt){
                 LookupSwitchStmt lu=(LookupSwitchStmt)u;
                 ArrayList<Value> lookupValues = new ArrayList<Value>(lu.getLookupValues());
@@ -147,6 +147,7 @@ public class CFG {
 				}
 
 				else if (s instanceof IfStmt) {
+					System.out.println("if in line"+ s.getJavaSourceStartLineNumber());
 					IfStmt IfStmt = (IfStmt) s;
 					Stmt ifSucc = (Stmt) units.getSuccOf(IfStmt);
 					Stmt ifTargert = IfStmt.getTarget();
@@ -168,6 +169,16 @@ public class CFG {
 				else if (s instanceof GotoStmt) {
 					GotoStmt go = (GotoStmt) s;
 					Stmt goTarget = (Stmt) go.getTarget();
+					if( goTarget.getJavaSourceStartLineNumber()!=units.getSuccOf(go).getJavaSourceStartLineNumber()){
+						if(go.getJavaSourceStartLineNumber()> units.getSuccOf(go).getJavaSourceStartLineNumber()){
+						goTarget.removeAllTags();
+						System.err.println("Remooved"+ goTarget.getJavaSourceStartLineNumber());
+					}
+					}
+				//	System.out.println(go.getJavaSourceStartColumnNumber()+ goTarget.getJavaSourceStartColumnNumber());
+					System.out.println(" it is go from " +go.getJavaSourceStartLineNumber()+  " to line: "+ goTarget.getJavaSourceStartLineNumber());
+					System.out.println(" it is go frpm " +go.getJavaSourceStartLineNumber()+ " next "+ units.getSuccOf(go).getJavaSourceStartLineNumber());
+					
 					addEdge(Integer.toString(key), Integer.toString(goTarget.getJavaSourceStartLineNumber()), null);
 
 				}
@@ -175,10 +186,14 @@ public class CFG {
 				else if (s instanceof LookupSwitchStmt) {
 					LookupSwitchStmt lookup = (LookupSwitchStmt) s;
                     Value val = lookup.getKey();
+                    System.out.println("inside lookupswitch");
+                    System.out.println(s.getJavaSourceStartLineNumber());
+                    System.out.println("Val: "+ val.getType().toString());
 
 					if (!val.getType().toString().equals("byte")) {
+						System.err.println("inside byte lookup");
 
-						continue;
+//						continue;
 					}
 					ArrayList<Unit> switchTargets;
 					Unit defaultTarget;
@@ -189,8 +204,10 @@ public class CFG {
                    
 
 					for (Unit u : switchTargets) {
+						
                       //  StringConstant IntConstant = (StringConstant) 	lookupValues.get(i);
                         //System.out.println("StringConstant "+ IntConstant+ " u.getValue():" );
+						System.out.println("switch target:" + u.getJavaSourceStartLineNumber());
 						addEdge(Integer.toString(key), Integer.toString(u.getJavaSourceStartLineNumber()),
 								"=="+lookupValues.get(i++).toString());
 					}
@@ -203,14 +220,15 @@ public class CFG {
 				}
 
 				else if (s instanceof TableSwitchStmt) {
-                    
+					 System.err.println("it is table switch");
 					TableSwitchStmt table = (TableSwitchStmt) s;
                     Value val = table.getKey();
 
 					if (!val.getType().toString().equals("byte")) {
+						System.err.println("inside byte table");
 
 
-						continue;
+					//	continue;
 					}
 					ArrayList<Unit> switchTargets;
 					Unit defaultTarget;
@@ -280,7 +298,7 @@ public class CFG {
           }
         }       
 		if (!from.equalsIgnoreCase(to) && !result) {
-			System.out.println(from + " -> " + to);
+			//System.out.println(from + " -> " + to);
 			ed = new Edge(from + " -> " + to, label);
             edges.add(ed);
             existTo.add(to);

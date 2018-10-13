@@ -1,2 +1,2 @@
 # CFG
-Control flow graph generator from java soruce code
+Control flow graph generator from java source code
