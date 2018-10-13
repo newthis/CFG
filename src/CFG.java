@@ -147,11 +147,23 @@ public class CFG {
 				}
 
 				else if (s instanceof IfStmt) {
-					System.out.println("if in line"+ s.getJavaSourceStartLineNumber());
+					System.err.println("if in line"+ s.getJavaSourceStartLineNumber());	
 					IfStmt IfStmt = (IfStmt) s;
+					
 					Stmt ifSucc = (Stmt) units.getSuccOf(IfStmt);
-					Stmt ifTargert = IfStmt.getTarget();
-
+					Stmt ifTarget = IfStmt.getTarget();
+					
+					if(ifTarget.getJavaSourceStartLineNumber()> ifSucc.getJavaSourceStartColumnNumber()){
+						if(ifSucc instanceof IfStmt){
+							System.err.println("WORRRRKED");
+							ifSucc=(Stmt) units.getSuccOf(ifSucc);
+						}
+					}
+					else if(IfStmt.getJavaSourceStartLineNumber()==ifTarget.getJavaSourceStartLineNumber()){
+						
+					}
+					System.err.println("if target " +IfStmt.getTarget().getJavaSourceStartLineNumber());
+					System.err.println("if succ " +ifSucc.getJavaSourceStartLineNumber());
 					label = IfStmt.getCondition().toString();
 					Expr expr = (Expr) IfStmt.getCondition();
 
@@ -162,7 +174,7 @@ public class CFG {
 
 					addEdge(Integer.toString(key), Integer.toString(ifSucc.getJavaSourceStartLineNumber()),
 							"!" + label);
-					addEdge(Integer.toString(key), Integer.toString(ifTargert.getJavaSourceStartLineNumber()), label);
+					addEdge(Integer.toString(key), Integer.toString(ifTarget.getJavaSourceStartLineNumber()), label);
 
 				}
 
