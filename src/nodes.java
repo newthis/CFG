@@ -10,11 +10,13 @@ import soot.jimple.Stmt;
 
 
 public class nodes{
+public String lineNumber;
 public boolean isCondition ;
 public ArrayList<Unit> lineUnits;
 
-public nodes(){
+public nodes(String lineNumber){
     lineUnits= new ArrayList<Unit>();
+    this.lineNumber=lineNumber;
 }
 
 public int getnoOfNodes(){
