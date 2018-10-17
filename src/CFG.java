@@ -7,6 +7,8 @@ Control flow graph builder for Java
 import java.io.File;
 import soot.*;
 import soot.options.*;
+import soot.tagkit.LineNumberTag;
+import soot.tagkit.SourceLnPosTag;
 import soot.util.*;
 import java.util.SortedMap;
 import java.util.ArrayList;
@@ -30,6 +32,7 @@ public class CFG {
 	public static TreeMap<String,Stmt> skippedJimbles= new TreeMap<String,Stmt>();
     static String outputGraphFile;
     public static String lastLine;
+    public static  Chain<Unit> units;
 
 	public static Edge ed;
 
@@ -72,7 +75,7 @@ public class CFG {
 		}
 		
 		Body b = sm.retrieveActiveBody();
-		Chain<Unit> units = b.getUnits();
+		units = b.getUnits();
 		nodes = null;
 		TreeMap<String,Stmt> skippedJimbles= new TreeMap<String, Stmt>();
 		Unit last=units.getLast();
@@ -81,23 +84,16 @@ public class CFG {
 		for (Unit u : units) {
             Stmt currStatement = (Stmt) u;
             System.out.println( currStatement.getJavaSourceStartLineNumber()+ " : "+ currStatement );
-            
-            
             String line= getLineNumber(currStatement);
             //if this node is being identified before as one of the problematic jimble statements in terms of line number
-//            for(String key: skippedJimbles.keySet()) {
-//            	Stmt statementToSkip= skippedJimbles.get(key);
-//            	if(currStatement.equals(statementToSkip)) {
-//            		 line=key;
-//            	}
-//            }	
-            	
-                mapJibmbleToLines(currStatement,line);
-                
-                
-            }
-			
 
+                mapJibmbleToLines(currStatement,line);      
+            }
+		correctLineNumbers();
+		for (Unit u : units) {
+			System.out.println(getLineNumber(u) + " : " + u);
+		}
+			
 		draw(units, instructions);
 		System.out.println("Size of edges"+ edges.size());
 		//removeExtaEdges();
@@ -148,9 +144,6 @@ public class CFG {
 
 	public static void draw(Chain<Unit> units, SortedMap<String, nodes> instructions2) {
 
-		// Add first Edge from Entry
-	//	addEdge("Entry", Integer.toString(instructions2.firstKey()), null);
-
 		String label = null;
 		Edge edge;
 		for (String key : instructions2.keySet()) {
@@ -178,29 +171,18 @@ public class CFG {
 			for (int z = 0; z < jimisntr.size(); z++) {
 				Unit jimpUnit = jimisntr.get(z);
 				 foundSkip=false;
-				//skipp skipped jimples ( like last stat in if block after fixing if else in same line problem
-//				for (String string : skippedJimbles.keySet()) {
-//					if(string.equalsIgnoreCase(key)&& skippedJimbles.get(key).equals((Stmt)jimpUnit)) {
-//						 foundSkip=true;
-//					}
-//				}
-//				if(foundSkip) {
-//					continue;
-//				}
-				// for(Unit jimpUnit:jimisntr){
+
 				label = null;
 				Stmt s = (Stmt) jimpUnit;
 
 				// Check Return Statements
 				if (  sw instanceof ReturnStmt
 						|| sw instanceof RetStmt || sw instanceof ReturnVoidStmt) {
-					//addEdge(key, "Exit", null);
 					edge=new Edge(instructions2.get(key), instructions.get("Exit"),null);
 					addEdge(edge);
 				}
 
 				else if (s instanceof IfStmt) {
-					boolean modified=false;
 					IfStmt IfStmt = (IfStmt) s;
 					System.err.println("if in line"+ s.getJavaSourceStartLineNumber());	
 					System.out.println("Orig succ of if is "+ getLineNumber(units.getSuccOf(IfStmt) ));
@@ -214,147 +196,22 @@ public class CFG {
 						BinopExpr binop = (BinopExpr) expr;
 						label = binop.getSymbol().trim();
 					}
-//					if(getLineNumber(IfStmt).equalsIgnoreCase(getLineNumber(ifTarget))){
-//						System.out.println("It is insssside first if");
-//						if(ifTarget instanceof IfStmt) {
-//							System.out.println("It is insssside second if");
-//							
-//							String targetsucc=getLineNumber(units.getSuccOf(ifTarget));
-//							int intsuccNumber=Integer.parseInt(targetsucc);
-//							String number=Integer.toString(intsuccNumber-1);
-//							Unit test=instructions.get(number).lineUnits.get(0);
-//							System.out.println("test: "+ number+" "+ test);
-//							if(test instanceof GotoStmt) {
-//								System.out.println("ALLLLLLLI it is instance of go line "+getLineNumber(test));
-//								GotoStmt g= (GotoStmt)test;
-//								System.out.println("heeeeey succ of go is "+ getLineNumber(units.getSuccOf(g) ));
-//								System.out.println("heeeeey target of go is "+ getLineNumber(g.getTarget() ));
-//
-//								if(getLineNumber(units.getSuccOf(g)).equalsIgnoreCase(key)) {
-//									System.out.println("Problematttttttttic::: ( } else if ) found");
-//									//System.err.println("remvoe of go "+ units.remove(g));
-//									
-//									/*remove go to and add it to last statement of if..
-//									add else to in correct line istead of goto
-//									*/
-//									instructions.get(getLineNumber(g)).lineUnits.remove(g);
-//									int goToIfElseLine=Integer.parseInt(getLineNumber(g));
-//									 String lastLineIfBlock=Integer.toString(goToIfElseLine-1);
-//									Unit unit2=units.getPredOf(g);
-//									lastLineIfBlock=getLineNumber(unit2);
-//									System.out.println(lastLineIfBlock+ " ::::::::::::::::: "+unit2 );
-//									//skippedJimbles.put(lastLineIfBlock, (Stmt) unit2);
-//									toRemoveEdge(lastLineIfBlock,getLineNumber(g));
-//								//	unit2.redirectJumpsToThisTo(arg0);
-//									 //add goto to last statement of the if block
-//									if(instructions.get(lastLineIfBlock)!=null)
-//									instructions.get(lastLineIfBlock).lineUnits.add(g);
-//									//addNodetoLine(g,lastLineIfBlock);
-//									//instructions.get(getLineNumber(ifSucc)).lineUnits.add(g);
-//									instructions.get(getLineNumber(g)).lineUnits.add(ifTarget);
-//									
-//									instructions.get(getLineNumber(IfStmt)).lineUnits.remove(ifTarget);
-//									edge=new Edge(instructions.get(key), instructions.get(getLineNumber(g)),  "!"+label);
-//									addEdge(edge);
-//									edge = new Edge(instructions.get(key), instructions.get(getLineNumber(ifSucc) ), label);
-//									addEdge(edge);
-//									System.out.println("if succ " + getLineNumber(ifSucc));
-//									System.out.println("succ of  succ " +getLineNumber(units.getSuccOf(ifSucc))+" "+ units.getSuccOf(ifSucc));
-//									modified=true;
-//									
-//								}
-//							}
-//						}
-//					} 
-				
-					 if(getLineNumber(ifSucc).equalsIgnoreCase(lastLine)&& ifSucc instanceof IfStmt){
-							System.out.println("fffffffffff inside exit of if " );
-						instructions.get(lastLine).lineUnits.remove(ifSucc);
-						instructions.get(key).lineUnits.add(ifSucc);
-						IfStmt f=(IfStmt)ifSucc;
-						System.err.println("if Exit target " +getLineNumber(f.getTarget()));
-						System.err.println("if Exit succ " +getLineNumber(units.getSuccOf(f)));
-						System.err.println("if succ " +ifSucc.getJavaSourceStartLineNumber());
-						toRemoveEdge(key,lastLine);
-						modified=true;
-						
-							
-						}else if(!getLineNumber(ifSucc).equalsIgnoreCase("Entry") && ifSucc instanceof IfStmt) {
-							System.out.println("fffffffffff inside entry of if "+modified);
-						int succLineNumber= Integer.parseInt(getLineNumber(ifSucc));
-						int ifLineNumber= Integer.parseInt(key);
-						if(ifLineNumber>succLineNumber) {
-							System.out.println("ifffffLine is less than succ");
-							instructions.get(getLineNumber(ifSucc)).lineUnits.remove(ifSucc);
-							instructions.get(key).lineUnits.add(ifSucc);
-							toRemoveEdge(key,getLineNumber(ifSucc));
-							IfStmt tempif=(IfStmt)ifSucc;
-						//	RemoveallEdgesFromNode(getLineNumber(ifSucc));
-							toRemoveEdge(getLineNumber(ifSucc),getLineNumber(tempif.getTarget()));
-							toRemoveEdge(getLineNumber(ifSucc),getLineNumber(units.getSuccOf(tempif)));
-							modified=true;
-
-						}
-						}					
- 
-				//	if(!modified) {
-//					if(ifTarget.getJavaSourceStartLineNumber()> ifSucc.getJavaSourceStartLineNumber()){
-//						if(ifSucc instanceof IfStmt){
-//							System.err.println("WORRRRKED");
-//							skippedJimbles.put(key,ifSucc);
-//							instructions.get(getLineNumber(ifSucc)).lineUnits.remove(ifSucc);
-//							mapJibmbleToLines(ifSucc, key);
-//							ifSucc=(Stmt) units.getSuccOf(ifSucc);
-//							
-//							
-//						}
-//						
-//					}
 					
 					System.err.println("if target not modified " +IfStmt.getTarget().getJavaSourceStartLineNumber());
 					System.err.println("if succ modified" +ifSucc.getJavaSourceStartLineNumber());
-//					label = IfStmt.getCondition().toString();
-//					 expr = (Expr) IfStmt.getCondition();
-//					if (expr instanceof BinopExpr) {
-//						BinopExpr binop = (BinopExpr) expr;
-//						label = binop.getSymbol().trim();
-//					}
+
 					edge = new Edge(instructions.get(key), instructions.get(getLineNumber(ifSucc) ), "!"+label);
-//					addEdge(Integer.toString(key), Integer.toString(ifSucc.getJavaSourceStartLineNumber()),
-//							"!" + label);
 					addEdge(edge);
 					edge = new Edge(instructions.get(key), instructions.get(getLineNumber(ifTarget) ), label);
 					addEdge(edge);
-					//addEdge(Integer.toString(key), Integer.toString(ifTarget.getJavaSourceStartLineNumber()), label);
 
-		//		}
 				}
 
 				else if (s instanceof GotoStmt) {
 					GotoStmt go = (GotoStmt) s;
 					Stmt goTarget = (Stmt) go.getTarget();
-//					if( goTarget.getJavaSourceStartLineNumber()!=units.getSuccOf(go).getJavaSourceStartLineNumber()){
-//						if(go.getJavaSourceStartLineNumber()> units.getSuccOf(go).getJavaSourceStartLineNumber()){
-//						goTarget.removeAllTags();
-//						System.err.println("Remooved"+ goTarget.getJavaSourceStartLineNumber());
-//					}
-//					}
-				//	System.out.println(go.getJavaSourceStartColumnNumber()+ goTarget.getJavaSourceStartColumnNumber());
-//					System.out.println(" it is go from " +go.getJavaSourceStartLineNumber()+  " to line: "+ goTarget.getJavaSourceStartLineNumber());
-//					System.out.println(" it is go frpm " +go.getJavaSourceStartLineNumber()+ " next "+ units.getSuccOf(go).getJavaSourceStartLineNumber());
-//					if(getLineNumber(go).equalsIgnoreCase(getLineNumber(goTarget))){
-//					if(!getLineNumber(goTarget).equalsIgnoreCase("exit") ){
-//						int goLine=Integer.parseInt(getLineNumber(go));
-//						int targetLine=Integer.parseInt(getLineNumber(goTarget));
-//						if(goLine>targetLine) {
-//							System.out.println("Ingore go before else bracekt");
-//							continue;
-//						}
-//					}
-//					}
 					edge = new Edge(instructions.get(key), instructions.get(getLineNumber(goTarget) ), label);
 					addEdge(edge);
-					//addEdge(Integer.toString(key), Integer.toString(goTarget.getJavaSourceStartLineNumber()), null);
 
 				}
 
@@ -379,20 +236,16 @@ public class CFG {
                    
 
 					for (Unit u : switchTargets) {
-						
-                      //  StringConstant IntConstant = (StringConstant) 	lookupValues.get(i);
-                        //System.out.println("StringConstant "+ IntConstant+ " u.getValue():" );
+					
 						System.out.println("switch target:" + u.getJavaSourceStartLineNumber());
 						edge = new Edge(instructions.get(key), instructions.get(getLineNumber(u) ), "=="+lookupValues.get(i++).toString());
 						addEdge(edge);
-//						addEdge(Integer.toString(key), Integer.toString(u.getJavaSourceStartLineNumber()),
-//								"=="+lookupValues.get(i++).toString());
+
 					}
 					if (defaultTarget != null) {
 						edge = new Edge(instructions.get(key), instructions.get(getLineNumber(defaultTarget) ), "default");
 						addEdge(edge);
-//						addEdge(Integer.toString(key), Integer.toString(defaultTarget.getJavaSourceStartLineNumber()),
-//								"default");
+
 
 					}
 
@@ -413,22 +266,18 @@ public class CFG {
 					Unit defaultTarget;
 					switchTargets = new ArrayList<Unit>(table.getTargets());
 					defaultTarget = table.getDefaultTarget();
-					//ArrayList<Value> tableValues = new ArrayList<Value>(table.getLookupValues());
                     
                     int i= table.getLowIndex();
 					for (Unit u : switchTargets) {
-                      //  StringConstant IntConstant = (StringConstant) 	lookupValues.get(i);
-                        //System.out.println("StringConstant "+ IntConstant+ " u.getValue():" );
+
 						edge = new Edge(instructions.get(key), instructions.get(getLineNumber(u) ), "=="+i++);
 						addEdge(edge);
-//						addEdge(Integer.toString(key), Integer.toString(u.getJavaSourceStartLineNumber()),
-//								"=="+i++);
+
 					}
 					if (defaultTarget != null) {
 						edge = new Edge(instructions.get(key), instructions.get(getLineNumber(defaultTarget)),"default" );
 						addEdge(edge);
-//						addEdge(Integer.toString(key), Integer.toString(defaultTarget.getJavaSourceStartLineNumber()),
-//								"default");
+
 
 					}
 
@@ -439,7 +288,6 @@ public class CFG {
 				else if (units.getSuccOf(jimpUnit) == null) {
 					edge = new Edge(instructions.get(key), instructions.get("Exit"),null );
 					addEdge(edge);
-//					addEdge(Integer.toString(key), "Exit", null);
 				}
 
 				else if (s instanceof ThrowStmt) {
@@ -454,8 +302,7 @@ public class CFG {
 					edge = new Edge(instructions.get(key), instructions.get(getLineNumber(units.getSuccOf(jimpUnit))),null );
 					System.err.println("valled line "+ key +" "+s );
 					addEdge(edge);
-//					addEdge(Integer.toString(key),
-//							Integer.toString(units.getSuccOf(jimpUnit).getJavaSourceStartLineNumber()), null);
+
 
 				}
 
@@ -467,33 +314,6 @@ public class CFG {
 	
 
 	}
-
-
-
-
-
-	private static void RemoveallEdgesFromNode(String lineNumber) {
-	
-	 ArrayList<Edge> tempEdges = new ArrayList<Edge>(edges);
-	 	int i=0;
-		for (Edge edge : tempEdges) {
-		
-			if(edge.from.lineNumber.equalsIgnoreCase(lineNumber)) {
-				System.out.println(" --    RemoveallEdgesFromNode    --"+ i++);
-				System.out.println(edge.from.lineNumber+ " -> "+ edge.to.lineNumber );
-				edges.remove(edge);
-			}
-		}
-		
-	}
-
-
-	private static void addNodetoLine(GotoStmt g, String lastLineIfBlock) {
-		
-		instructions.get(lastLineIfBlock).lineUnits.add(g);
-		
-	}
-
 
 	private static void mapJibmbleToLines (Stmt statement, String line) {
 		String jimbleLine = line;
@@ -512,27 +332,6 @@ public class CFG {
 
 	}
 	
-
-//	public static void addEdge(String from, String to, String label) {
-//        ArrayList<String> existTo=existingedges.get(from);
-//        boolean result=false;
-//        if(existTo==null){
-//            existTo= new ArrayList<String>();
-//        }
-//        else{
-//        for (String var : existTo) {
-//            if(to.equalsIgnoreCase(var))
-//            result=true;   
-//          }
-//        }       
-//		if (!from.equalsIgnoreCase(to) && !result) {
-//			//System.out.println(from + " -> " + to);
-//			ed = new Edge(from + " -> " + to, label);
-//            edges.add(ed);
-//            existTo.add(to);
-//            existingedges.put(from,existTo);
-//		}
-//	}
 
 	
 	
@@ -582,30 +381,51 @@ public class CFG {
 
 	}
 	
+	private static void correctLineNumbers() {
+		for (Unit unit : units) {
+			String key = getLineNumber(unit);
+			if (unit instanceof IfStmt) {
+				IfStmt IfStmt = (IfStmt) unit;
+				Stmt ifSucc = (Stmt) units.getSuccOf(IfStmt);
+				Stmt ifTarget = IfStmt.getTarget();
+				if (getLineNumber(ifSucc).equalsIgnoreCase(lastLine) && ifSucc instanceof IfStmt) {
+					System.err.println("inside LastLine" + getLineNumber(unit));
+					instructions.get(lastLine).lineUnits.remove(ifSucc);
+					instructions.get(key).lineUnits.add(ifSucc);
+					IfStmt f = (IfStmt) ifSucc;
+					editLineNumber(ifSucc, key);
+
+				} else if (!getLineNumber(ifSucc).equalsIgnoreCase("Entry") && ifSucc instanceof IfStmt) {
+					System.err.println("inside not ENtry" + getLineNumber(unit));
+					int succLineNumber = Integer.parseInt(getLineNumber(ifSucc));
+					int ifLineNumber = Integer.parseInt(key);
+					if (ifLineNumber > succLineNumber) {
+						instructions.get(getLineNumber(ifSucc)).lineUnits.remove(ifSucc);
+						instructions.get(key).lineUnits.add(ifSucc);
+						IfStmt tempif = (IfStmt) ifSucc;
+						editLineNumber(ifSucc, key);
+
+					}
+				}
+			}
+
+		}
+	}
+	private static void editLineNumber(Unit s, String line) {
+		LineNumberTag lnTag = (LineNumberTag) s.getTag("LineNumberTag");
+		System.err.println("Changed...from" +getLineNumber(s));
+		if (lnTag != null) {
+			lnTag.setLineNumber(Integer.parseInt(line));
+			System.err.println("to.. "+ line);
+		}
+	}
 	private static String getLineNumber(Unit s) {
-
-		// LineNumberTag lnTag = (LineNumberTag) s.getTag("LineNumberTag");
-		// if (lnTag != null)
-		// return Integer.toString(lnTag.getLineNumber());
-		// SourceLnPosTag tag = (SourceLnPosTag) s.getTag("SourceLnPosTag");
-		// if (tag != null)
-		// return Integer.toString(tag.startLn());
-		//
-		//
-		// return Integer.toString(-1);
-
-		// String line = Integer.toString(s.getJavaSourceStartLineNumber());
-		if(s==null) {
-			return "Exit";
-		}
-		String line = Integer.toString(s.getJavaSourceStartLineNumber());
-		if (line.equalsIgnoreCase("-1")) {
-			line = "Entry";
-		}
-//		if (line.equalsIgnoreCase(lastLine)) {
-//			line = "Exit";
-//		}
-	
-		return line;
+		 if(s==null) {
+			 return "Exit";
+			 }
+		LineNumberTag lnTag = (LineNumberTag) s.getTag("LineNumberTag");
+		if (lnTag != null){
+			 return Integer.toString(lnTag.getLineNumber());}
+		 return "Entry";
 	}
 }
