@@ -5,13 +5,16 @@ Control flow graph builder for Java
 
 
 import java.io.File;
+
 import soot.*;
 import soot.options.*;
 import soot.tagkit.LineNumberTag;
 import soot.tagkit.SourceLnPosTag;
 import soot.util.*;
+
 import java.util.SortedMap;
 import java.util.ArrayList;
+
 import soot.jimple.*;
 import soot.jimple.toolkits.callgraph.Units;
 
@@ -60,6 +63,8 @@ public class CFG {
 		
 		Scene.v().setSootClassPath(sootClassPath);
 		Options.v().set_keep_line_number(true);
+		Options.v().setPhaseOption("jb", "use-original-names:true");
+		Options.v().setPhaseOption("jb.a", "enabled:false");
 		// Keep line numbers
 		SootClass sc = Scene.v().loadClassAndSupport(className);
 		// get class referecne and store it in sc
@@ -80,7 +85,7 @@ public class CFG {
 		mapJibmbleToLines(null, "Exit");
 		for (Unit u : units) {
             Stmt currStatement = (Stmt) u;
-//            System.out.println( currStatement.getJavaSourceStartLineNumber()+ " : "+ currStatement );
+            System.out.println( currStatement.getJavaSourceStartLineNumber()+ " : "+ currStatement );
             String line= getLineNumber(currStatement);
             //if this node is being identified before as one of the problematic jimble statements in terms of line number
 
@@ -369,6 +374,10 @@ public class CFG {
 				IfStmt IfStmt = (IfStmt) unit;
 				Stmt ifSucc = (Stmt) units.getSuccOf(IfStmt);
 				Stmt ifTarget = IfStmt.getTarget();
+				int succLineNumber = Integer.parseInt(getLineNumber(ifSucc));
+				Unit succOfSucc=units.getSuccOf(ifSucc);
+				System.err.println("it is if in line: "+ getLineNumber(unit)+ " succofSucc: "+ getLineNumber(succOfSucc));
+				int ifLineNumber = Integer.parseInt(key);
 				if (getLineNumber(ifSucc).equalsIgnoreCase(lastLine) && ifSucc instanceof IfStmt) {
 					
 					instructions.get(lastLine).lineUnits.remove(ifSucc);
@@ -378,14 +387,23 @@ public class CFG {
 
 				} else if (!getLineNumber(ifSucc).equalsIgnoreCase("Entry") && ifSucc instanceof IfStmt) {
 					
-					int succLineNumber = Integer.parseInt(getLineNumber(ifSucc));
-					int ifLineNumber = Integer.parseInt(key);
+					
 					if (ifLineNumber > succLineNumber) {
 						instructions.get(getLineNumber(ifSucc)).lineUnits.remove(ifSucc);
 						instructions.get(key).lineUnits.add(ifSucc);
 						IfStmt tempif = (IfStmt) ifSucc;
 						editLineNumber(ifSucc, key);
 
+					}
+				}else  if (succOfSucc!=null ) {
+					int succOfSuccLineNumber= Integer.parseInt(getLineNumber(succOfSucc));
+				//	if(succOfSucc instanceof IfStmt && succLineNumber>succOfSuccLineNumber){
+					if( succLineNumber>succOfSuccLineNumber){
+						System.err.println("FOund tHe Issue");
+					instructions.get(getLineNumber(ifSucc)).lineUnits.remove(ifSucc);
+					instructions.get(key).lineUnits.add(ifSucc);
+//					IfStmt tempif = (IfStmt) ifSucc;
+//					editLineNumber(ifSucc, key);
 					}
 				}
 			}
