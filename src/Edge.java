@@ -26,8 +26,9 @@ public Edge(nodes from, nodes to, String label ){
         //    System.err.println("inside equals: ");
          //   System.err.println("        "+ this.local.getName()+" ,"+varObj.local.getName()+" ,"+ this.defLine+" ,"+varObj.defLine);
             if(this.from.lineNumber.equalsIgnoreCase(edge.from.lineNumber) && this.to.lineNumber.equalsIgnoreCase(edge.to.lineNumber)) {
-            	//System.err.println("inside8888888888888888888888");
-            	result= true;}
+            if(this.edge!=null && this.edge!=null){
+            	if(this.edge.equalsIgnoreCase(edge.label))
+            	result= true;}}
       //   System.out.println(result);
             	return result;
             

@@ -8,7 +8,6 @@ import soot.jimple.*;
 import soot.jimple.Stmt;
 
 
-
 public class nodes{
 public String lineNumber;
 public boolean isCondition ;

@@ -42,10 +42,7 @@ public class CFG {
 			System.err.println( "AError! You should enter 3 arguments" );
 			System.exit( 1 );
         }
-        for (String var : args) {
-            System.out.println("Argument: "+var);
-            
-        }
+      
    
         String className = args[0];
         outputGraphFile = args[1];
@@ -83,21 +80,19 @@ public class CFG {
 		mapJibmbleToLines(null, "Exit");
 		for (Unit u : units) {
             Stmt currStatement = (Stmt) u;
-            System.out.println( currStatement.getJavaSourceStartLineNumber()+ " : "+ currStatement );
+//            System.out.println( currStatement.getJavaSourceStartLineNumber()+ " : "+ currStatement );
             String line= getLineNumber(currStatement);
             //if this node is being identified before as one of the problematic jimble statements in terms of line number
 
                 mapJibmbleToLines(currStatement,line);      
             }
 		correctLineNumbers();
-		for (Unit u : units) {
-			System.out.println(getLineNumber(u) + " : " + u);
-		}
+		
 			
 		draw(units, instructions);
-		System.out.println("Size of edges"+ edges.size());
+		
 		//removeExtaEdges();
-		System.out.println("Size of extraa edges"+ edgesToRemove.size());
+		
 		try {
 			OutputStream output = new FileOutputStream(outputGraphFile);
 			generateDotty(output, edges);
@@ -106,7 +101,7 @@ public class CFG {
 			System.out.println("Error while writing dottyFile " + outputGraphFile );
 			System.exit(1);
 		}
-		//printEdges();
+		System.out.println("Done.. outputed CFG to: "+outputGraphFile);
 	}
 		
 	
@@ -130,7 +125,7 @@ public class CFG {
 				for (Edge edge : temp) {
 					if (edge.from.lineNumber.equalsIgnoreCase(from) && edge.to.lineNumber.equalsIgnoreCase(to)) {
 						
-						System.out.println(edges.remove(edge)+" Remooooooooooo0000000000000000000000000000"+ from+" --> "+ to );
+						edges.remove(edge);
 						
 					}
 					
@@ -152,15 +147,7 @@ public class CFG {
 			}
 			ArrayList<Unit> jimisntr = instructions2.get(key).lineUnits;
 			Unit sw = jimisntr.get(jimisntr.size() - 1);
-			System.err.println();
-			System.err.println();
-			System.err.println("---------------------------------------");
-			System.err.println("-------------- "+getLineNumber(sw)+" ,  "+sw+" -------------------------");
-			System.err.println("---------------------------------------");
-			if(getLineNumber(sw).equalsIgnoreCase("5")) {
-				System.err.println("Line 5:"+ sw);
-				System.err.println("Succ of 5"+ units.getSuccOf(sw));
-			}
+		
 			if (sw instanceof LookupSwitchStmt || sw instanceof TableSwitchStmt || sw instanceof ReturnStmt
 					|| sw instanceof RetStmt || sw instanceof ReturnVoidStmt) {
 				jimisntr.subList(0, jimisntr.size() - 1).clear();
@@ -184,9 +171,7 @@ public class CFG {
 
 				else if (s instanceof IfStmt) {
 					IfStmt IfStmt = (IfStmt) s;
-					System.err.println("if in line"+ s.getJavaSourceStartLineNumber());	
-					System.out.println("Orig succ of if is "+ getLineNumber(units.getSuccOf(IfStmt) ));
-					System.out.println("orig target of if is "+ getLineNumber(IfStmt.getTarget() ));
+
 					Stmt ifSucc = (Stmt) units.getSuccOf(IfStmt);
 					Stmt ifTarget = IfStmt.getTarget();
 					label = IfStmt.getCondition().toString();
@@ -197,8 +182,7 @@ public class CFG {
 						label = binop.getSymbol().trim();
 					}
 					
-					System.err.println("if target not modified " +IfStmt.getTarget().getJavaSourceStartLineNumber());
-					System.err.println("if succ modified" +ifSucc.getJavaSourceStartLineNumber());
+
 
 					edge = new Edge(instructions.get(key), instructions.get(getLineNumber(ifSucc) ), "!"+label);
 					addEdge(edge);
@@ -218,12 +202,10 @@ public class CFG {
 				else if (s instanceof LookupSwitchStmt) {
 					LookupSwitchStmt lookup = (LookupSwitchStmt) s;
                     Value val = lookup.getKey();
-                    System.out.println("inside lookupswitch");
-                    System.out.println(s.getJavaSourceStartLineNumber());
-                    System.out.println("Val: "+ val.getType().toString());
+
 
 					if (!val.getType().toString().equals("byte")) {
-						System.err.println("inside byte lookup");
+						
 
 //						continue;
 					}
@@ -237,8 +219,7 @@ public class CFG {
 
 					for (Unit u : switchTargets) {
 					
-						System.out.println("switch target:" + u.getJavaSourceStartLineNumber());
-						edge = new Edge(instructions.get(key), instructions.get(getLineNumber(u) ), "=="+lookupValues.get(i++).toString());
+						edge = new Edge(instructions.get(key), instructions.get(getLineNumber(u) ), lookupValues.get(i++).toString());
 						addEdge(edge);
 
 					}
@@ -252,12 +233,12 @@ public class CFG {
 				}
 
 				else if (s instanceof TableSwitchStmt) {
-					 System.err.println("it is table switch");
+					
 					TableSwitchStmt table = (TableSwitchStmt) s;
                     Value val = table.getKey();
 
 					if (!val.getType().toString().equals("byte")) {
-						System.err.println("inside byte table");
+						
 
 
 					//	continue;
@@ -270,7 +251,7 @@ public class CFG {
                     int i= table.getLowIndex();
 					for (Unit u : switchTargets) {
 
-						edge = new Edge(instructions.get(key), instructions.get(getLineNumber(u) ), "=="+i++);
+						edge = new Edge(instructions.get(key), instructions.get(getLineNumber(u) ), Integer.toString(i++));
 						addEdge(edge);
 
 					}
@@ -300,7 +281,7 @@ public class CFG {
 						continue;
 					}
 					edge = new Edge(instructions.get(key), instructions.get(getLineNumber(units.getSuccOf(jimpUnit))),null );
-					System.err.println("valled line "+ key +" "+s );
+					
 					addEdge(edge);
 
 
@@ -345,7 +326,7 @@ public class CFG {
 	    String label=edge.label;
 	
 	
-	System.out.println(from + " -> " + to+  "                      [label = \"" + label + "\"];\n");
+//	System.out.println(from + " -> " + to+  "                      [label = \"" + label + "\"];\n");
 		
 	}
 }
@@ -389,14 +370,14 @@ public class CFG {
 				Stmt ifSucc = (Stmt) units.getSuccOf(IfStmt);
 				Stmt ifTarget = IfStmt.getTarget();
 				if (getLineNumber(ifSucc).equalsIgnoreCase(lastLine) && ifSucc instanceof IfStmt) {
-					System.err.println("inside LastLine" + getLineNumber(unit));
+					
 					instructions.get(lastLine).lineUnits.remove(ifSucc);
 					instructions.get(key).lineUnits.add(ifSucc);
 					IfStmt f = (IfStmt) ifSucc;
 					editLineNumber(ifSucc, key);
 
 				} else if (!getLineNumber(ifSucc).equalsIgnoreCase("Entry") && ifSucc instanceof IfStmt) {
-					System.err.println("inside not ENtry" + getLineNumber(unit));
+					
 					int succLineNumber = Integer.parseInt(getLineNumber(ifSucc));
 					int ifLineNumber = Integer.parseInt(key);
 					if (ifLineNumber > succLineNumber) {
@@ -413,10 +394,10 @@ public class CFG {
 	}
 	private static void editLineNumber(Unit s, String line) {
 		LineNumberTag lnTag = (LineNumberTag) s.getTag("LineNumberTag");
-		System.err.println("Changed...from" +getLineNumber(s));
+		
 		if (lnTag != null) {
 			lnTag.setLineNumber(Integer.parseInt(line));
-			System.err.println("to.. "+ line);
+			
 		}
 	}
 	private static String getLineNumber(Unit s) {
