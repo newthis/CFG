@@ -100,7 +100,7 @@ public class CFG {
 
 		draw(units, instructions);
 		System.out.println("Size of edges"+ edges.size());
-		removeExtaEdges();
+		//removeExtaEdges();
 		System.out.println("Size of extraa edges"+ edgesToRemove.size());
 		try {
 			OutputStream output = new FileOutputStream(outputGraphFile);
@@ -123,6 +123,7 @@ public class CFG {
 		
 		//temp.add(to);
 		edgesToRemove.get(from).add(to);
+		removeExtaEdges();
 		
 	}
 
@@ -202,8 +203,8 @@ public class CFG {
 					boolean modified=false;
 					IfStmt IfStmt = (IfStmt) s;
 					System.err.println("if in line"+ s.getJavaSourceStartLineNumber());	
-					System.out.println("Orig succ of go is "+ getLineNumber(units.getSuccOf(IfStmt) ));
-					System.out.println("orig target of go is "+ getLineNumber(IfStmt.getTarget() ));
+					System.out.println("Orig succ of if is "+ getLineNumber(units.getSuccOf(IfStmt) ));
+					System.out.println("orig target of if is "+ getLineNumber(IfStmt.getTarget() ));
 					Stmt ifSucc = (Stmt) units.getSuccOf(IfStmt);
 					Stmt ifTarget = IfStmt.getTarget();
 					label = IfStmt.getCondition().toString();
@@ -287,13 +288,16 @@ public class CFG {
 							instructions.get(getLineNumber(ifSucc)).lineUnits.remove(ifSucc);
 							instructions.get(key).lineUnits.add(ifSucc);
 							toRemoveEdge(key,getLineNumber(ifSucc));
-							RemoveallEdgesFromNode(getLineNumber(ifSucc));
+							IfStmt tempif=(IfStmt)ifSucc;
+						//	RemoveallEdgesFromNode(getLineNumber(ifSucc));
+							toRemoveEdge(getLineNumber(ifSucc),getLineNumber(tempif.getTarget()));
+							toRemoveEdge(getLineNumber(ifSucc),getLineNumber(units.getSuccOf(tempif)));
 							modified=true;
 
 						}
 						}					
  
-					if(!modified) {
+				//	if(!modified) {
 //					if(ifTarget.getJavaSourceStartLineNumber()> ifSucc.getJavaSourceStartLineNumber()){
 //						if(ifSucc instanceof IfStmt){
 //							System.err.println("WORRRRKED");
@@ -323,7 +327,7 @@ public class CFG {
 					addEdge(edge);
 					//addEdge(Integer.toString(key), Integer.toString(ifTarget.getJavaSourceStartLineNumber()), label);
 
-				}
+		//		}
 				}
 
 				else if (s instanceof GotoStmt) {
@@ -466,6 +470,22 @@ public class CFG {
 
 
 
+
+
+	private static void RemoveallEdgesFromNode(String lineNumber) {
+	
+	 ArrayList<Edge> tempEdges = new ArrayList<Edge>(edges);
+	 	int i=0;
+		for (Edge edge : tempEdges) {
+		
+			if(edge.from.lineNumber.equalsIgnoreCase(lineNumber)) {
+				System.out.println(" --    RemoveallEdgesFromNode    --"+ i++);
+				System.out.println(edge.from.lineNumber+ " -> "+ edge.to.lineNumber );
+				edges.remove(edge);
+			}
+		}
+		
+	}
 
 
 	private static void addNodetoLine(GotoStmt g, String lastLineIfBlock) {
