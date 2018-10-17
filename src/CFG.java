@@ -213,58 +213,58 @@ public class CFG {
 						BinopExpr binop = (BinopExpr) expr;
 						label = binop.getSymbol().trim();
 					}
-					if(getLineNumber(IfStmt).equalsIgnoreCase(getLineNumber(ifTarget))){
-						System.out.println("It is insssside first if");
-						if(ifTarget instanceof IfStmt) {
-							System.out.println("It is insssside second if");
-							
-							String targetsucc=getLineNumber(units.getSuccOf(ifTarget));
-							int intsuccNumber=Integer.parseInt(targetsucc);
-							String number=Integer.toString(intsuccNumber-1);
-							Unit test=instructions.get(number).lineUnits.get(0);
-							System.out.println("test: "+ number+" "+ test);
-							if(test instanceof GotoStmt) {
-								System.out.println("ALLLLLLLI it is instance of go line "+getLineNumber(test));
-								GotoStmt g= (GotoStmt)test;
-								System.out.println("heeeeey succ of go is "+ getLineNumber(units.getSuccOf(g) ));
-								System.out.println("heeeeey target of go is "+ getLineNumber(g.getTarget() ));
-
-								if(getLineNumber(units.getSuccOf(g)).equalsIgnoreCase(key)) {
-									System.out.println("Problematttttttttic::: ( } else if ) found");
-									//System.err.println("remvoe of go "+ units.remove(g));
-									
-									/*remove go to and add it to last statement of if..
-									add else to in correct line istead of goto
-									*/
-									instructions.get(getLineNumber(g)).lineUnits.remove(g);
-									int goToIfElseLine=Integer.parseInt(getLineNumber(g));
-									 String lastLineIfBlock=Integer.toString(goToIfElseLine-1);
-									Unit unit2=units.getPredOf(g);
-									lastLineIfBlock=getLineNumber(unit2);
-									System.out.println(lastLineIfBlock+ " ::::::::::::::::: "+unit2 );
-									//skippedJimbles.put(lastLineIfBlock, (Stmt) unit2);
-									toRemoveEdge(lastLineIfBlock,getLineNumber(g));
-								//	unit2.redirectJumpsToThisTo(arg0);
-									 //add goto to last statement of the if block
-									if(instructions.get(lastLineIfBlock)!=null)
-									instructions.get(lastLineIfBlock).lineUnits.add(g);
-									//addNodetoLine(g,lastLineIfBlock);
-									//instructions.get(getLineNumber(ifSucc)).lineUnits.add(g);
-									instructions.get(getLineNumber(g)).lineUnits.add(ifTarget);
-									
-									instructions.get(getLineNumber(IfStmt)).lineUnits.remove(ifTarget);
-									edge=new Edge(instructions.get(key), instructions.get(getLineNumber(g)),  "!"+label);
-									addEdge(edge);
-									edge = new Edge(instructions.get(key), instructions.get(getLineNumber(ifSucc) ), label);
-									addEdge(edge);
-									System.out.println("if succ " + getLineNumber(ifSucc));
-									System.out.println("succ of  succ " +getLineNumber(units.getSuccOf(ifSucc))+" "+ units.getSuccOf(ifSucc));
-									modified=true;
-									
-								}
-							}
-						}
-					} 
+//					if(getLineNumber(IfStmt).equalsIgnoreCase(getLineNumber(ifTarget))){
+//						System.out.println("It is insssside first if");
+//						if(ifTarget instanceof IfStmt) {
+//							System.out.println("It is insssside second if");
+//							
+//							String targetsucc=getLineNumber(units.getSuccOf(ifTarget));
+//							int intsuccNumber=Integer.parseInt(targetsucc);
+//							String number=Integer.toString(intsuccNumber-1);
+//							Unit test=instructions.get(number).lineUnits.get(0);
+//							System.out.println("test: "+ number+" "+ test);
+//							if(test instanceof GotoStmt) {
+//								System.out.println("ALLLLLLLI it is instance of go line "+getLineNumber(test));
+//								GotoStmt g= (GotoStmt)test;
+//								System.out.println("heeeeey succ of go is "+ getLineNumber(units.getSuccOf(g) ));
+//								System.out.println("heeeeey target of go is "+ getLineNumber(g.getTarget() ));
+//
+//								if(getLineNumber(units.getSuccOf(g)).equalsIgnoreCase(key)) {
+//									System.out.println("Problematttttttttic::: ( } else if ) found");
+//									//System.err.println("remvoe of go "+ units.remove(g));
+//									
+//									/*remove go to and add it to last statement of if..
+//									add else to in correct line istead of goto
+//									*/
+//									instructions.get(getLineNumber(g)).lineUnits.remove(g);
+//									int goToIfElseLine=Integer.parseInt(getLineNumber(g));
+//									 String lastLineIfBlock=Integer.toString(goToIfElseLine-1);
+//									Unit unit2=units.getPredOf(g);
+//									lastLineIfBlock=getLineNumber(unit2);
+//									System.out.println(lastLineIfBlock+ " ::::::::::::::::: "+unit2 );
+//									//skippedJimbles.put(lastLineIfBlock, (Stmt) unit2);
+//									toRemoveEdge(lastLineIfBlock,getLineNumber(g));
+//								//	unit2.redirectJumpsToThisTo(arg0);
+//									 //add goto to last statement of the if block
+//									if(instructions.get(lastLineIfBlock)!=null)
+//									instructions.get(lastLineIfBlock).lineUnits.add(g);
+//									//addNodetoLine(g,lastLineIfBlock);
+//									//instructions.get(getLineNumber(ifSucc)).lineUnits.add(g);
+//									instructions.get(getLineNumber(g)).lineUnits.add(ifTarget);
+//									
+//									instructions.get(getLineNumber(IfStmt)).lineUnits.remove(ifTarget);
+//									edge=new Edge(instructions.get(key), instructions.get(getLineNumber(g)),  "!"+label);
+//									addEdge(edge);
+//									edge = new Edge(instructions.get(key), instructions.get(getLineNumber(ifSucc) ), label);
+//									addEdge(edge);
+//									System.out.println("if succ " + getLineNumber(ifSucc));
+//									System.out.println("succ of  succ " +getLineNumber(units.getSuccOf(ifSucc))+" "+ units.getSuccOf(ifSucc));
+//									modified=true;
+//									
+//								}
+//							}
+//						}
+//					} 
 				
 					 if(getLineNumber(ifSucc).equalsIgnoreCase(lastLine)&& ifSucc instanceof IfStmt){
 							System.out.println("fffffffffff inside exit of if " );
@@ -283,9 +283,11 @@ public class CFG {
 						int succLineNumber= Integer.parseInt(getLineNumber(ifSucc));
 						int ifLineNumber= Integer.parseInt(key);
 						if(ifLineNumber>succLineNumber) {
+							System.out.println("ifffffLine is less than succ");
 							instructions.get(getLineNumber(ifSucc)).lineUnits.remove(ifSucc);
 							instructions.get(key).lineUnits.add(ifSucc);
 							toRemoveEdge(key,getLineNumber(ifSucc));
+							RemoveallEdgesFromNode(getLineNumber(ifSucc));
 							modified=true;
 
 						}
